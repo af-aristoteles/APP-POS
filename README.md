@@ -115,7 +115,9 @@
 
 ## 📸 Screenshots
 
-> *(Tambahkan screenshot aplikasi di sini. Contoh: halaman Login, POS, Produk, Laporan)*
+| Login | Dashboard | POS | Laporan |
+|---|---|---|---|
+| ![Login](https://ik.imagekit.io/11ladp3yp/Screenshot%202026-05-10%20141531.png) | ![Dashboard](https://ik.imagekit.io/11ladp3yp/Screenshot%202026-05-10%20141554.png) | ![POS](https://ik.imagekit.io/11ladp3yp/Screenshot%202026-05-10%20141613.png) | ![Laporan](https://ik.imagekit.io/11ladp3yp/Screenshot%202026-05-10%20141701.png) |
 
 ---
 
