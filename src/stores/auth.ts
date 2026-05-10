@@ -11,7 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAdmin = computed(() => profile.value?.role === 'admin')
   const isKasir = computed(() => profile.value?.role === 'kasir')
-  const isLoggedIn = computed(() => !!user.value && !!profile.value)
+  const isLoggedIn = computed(() => !!user.value)
 
   async function init() {
     loading.value = true

@@ -14,15 +14,19 @@ app.use(router)
 
 const authStore = useAuthStore()
 
-// Init auth with timeout to avoid blocking
-const initPromise = authStore.init()
-const timeout = new Promise((resolve) => setTimeout(resolve, 5000))
-await Promise.race([initPromise, timeout])
+// Init auth — wait for session restore to complete before mounting app
+await authStore.init()
 
 supabase.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session) {
-    authStore.user = session.user
-    await authStore.fetchProfile()
+  if (
+    event === 'SIGNED_IN' ||
+    event === 'INITIAL_SESSION' ||
+    event === 'TOKEN_REFRESHED'
+  ) {
+    if (session) {
+      authStore.user = session.user
+      await authStore.fetchProfile()
+    }
   }
   if (event === 'SIGNED_OUT' || event === 'PASSWORD_RECOVERY') {
     if (event === 'PASSWORD_RECOVERY' && session) {
@@ -32,9 +36,6 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_OUT') {
       authStore.user = null
       authStore.profile = null
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('sb-')) localStorage.removeItem(key)
-      })
     }
   }
 })

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -88,6 +89,15 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+
+  // Wait for auth to finish initializing before deciding navigation
+  if (authStore.loading) {
+    await new Promise<void>((resolve) => {
+      const unwatch = watch(() => authStore.loading, (val) => {
+        if (!val) { unwatch(); resolve() }
+      })
+    })
+  }
 
   if (to.meta.public && authStore.isLoggedIn) {
     if (authStore.isAdmin) return next('/')

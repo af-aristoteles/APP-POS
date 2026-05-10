@@ -51,9 +51,9 @@ export const useCartStore = defineStore('cart', () => {
     amountPaid.value = 0
   }
 
-  async function checkout(): Promise<{ data: Transaction | null; error: any }> {
+  async function checkout(): Promise<{ data: Transaction | null; items: Array<{ name: string; qty: number; price: number; subtotal: number }>; error: any }> {
     if (items.value.length === 0 || amountPaid.value < totalAmount.value) {
-      return { data: null, error: 'Invalid checkout' }
+      return { data: null, items: [], error: 'Invalid checkout' }
     }
 
     // 1. Insert transaction
@@ -69,7 +69,7 @@ export const useCartStore = defineStore('cart', () => {
       .select()
       .single()
 
-    if (txError || !transaction) return { data: null, error: txError }
+    if (txError || !transaction) return { data: null, items: [], error: txError }
 
     // 2. Insert transaction items
     const itemsToInsert = items.value.map((item) => ({
@@ -85,32 +85,58 @@ export const useCartStore = defineStore('cart', () => {
       .from('transaction_items')
       .insert(itemsToInsert)
 
-    if (itemsError) return { data: null, error: itemsError }
+    if (itemsError) return { data: null, items: [], error: itemsError }
 
-    // 3. Update stock using relative decrement
+    // Save receipt items before stock updates
+    const receiptItems = items.value.map((i) => ({
+      name: i.product.name,
+      qty: i.quantity,
+      price: i.product.price,
+      subtotal: i.product.price * i.quantity,
+    }))
+
+    // 3. Update stock using atomic read-then-write from DB
     for (const item of items.value) {
+      // Re-fetch current stock from DB to avoid stale snapshot
+      const { data: dbProduct, error: fetchErr } = await supabase
+        .from('products')
+        .select('stock, min_stock, is_active')
+        .eq('id', item.product.id)
+        .single()
+
+      if (fetchErr || !dbProduct) {
+        return { data: null, items: receiptItems, error: `Gagal membaca stok ${item.product.name}` }
+      }
+
+      const newStock = dbProduct.stock - item.quantity
+      if (newStock < 0) {
+        return { data: null, items: receiptItems, error: `Stok ${item.product.name} tidak mencukupi` }
+      }
+
       const { error: stockErr } = await supabase
         .from('products')
-        .update({ stock: item.product.stock - item.quantity })
+        .update({ stock: newStock })
         .eq('id', item.product.id)
+        .gte('stock', item.quantity)
 
       if (stockErr) {
-        console.error('Failed to update stock for', item.product.name, stockErr.message)
+        return { data: null, items: receiptItems, error: `Gagal update stok ${item.product.name}: ${stockErr.message}` }
       }
 
       // 4. Create stock alert if below threshold
-      const newStock = item.product.stock - item.quantity
-      if (newStock <= item.product.min_stock) {
+      if (newStock <= dbProduct.min_stock) {
         const { error: alertErr } = await supabase
           .from('stock_alerts')
           .insert({
             product_id: item.product.id,
             product_name: item.product.name,
             current_stock: newStock,
-            min_stock: item.product.min_stock,
+            min_stock: dbProduct.min_stock,
             alert_type: newStock <= 0 ? 'out_of_stock' : 'low_stock',
           })
-        if (alertErr) console.error('Failed to create stock alert:', alertErr.message)
+        if (alertErr) {
+          console.error('Failed to create stock alert:', alertErr.message)
+        }
       }
 
       // 5. Auto-deactivate product when stock is 0 or less
@@ -119,20 +145,22 @@ export const useCartStore = defineStore('cart', () => {
           .from('products')
           .update({ is_active: false })
           .eq('id', item.product.id)
-        if (deactErr) console.error('Failed to deactivate product:', deactErr.message)
+        if (deactErr) {
+          console.error('Failed to deactivate product:', deactErr.message)
+        }
       }
     }
 
-    // 5. Telegram notification
+    // 6. Telegram notification
     sendCheckoutAlert(
       transaction.invoice_number,
       transaction.total_amount,
-      items.value.map((i) => ({ name: i.product.name, quantity: i.quantity }))
+      receiptItems.map((i) => ({ name: i.name, quantity: i.qty }))
     )
 
     clearCart()
 
-    return { data: transaction as Transaction, error: null }
+    return { data: transaction as Transaction, items: receiptItems, error: null }
   }
 
   return {

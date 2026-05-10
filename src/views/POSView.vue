@@ -106,7 +106,7 @@
           </button>
           <button
             class="flex-1 nb-btn nb-btn-md nb-btn-success"
-            :disabled="cartStore.items.length === 0 || cartStore.amountPaid < cartStore.totalAmount"
+            :disabled="checkoutLoading || cartStore.items.length === 0 || cartStore.amountPaid < cartStore.totalAmount"
             @click="handleCheckout"
           >
             Bayar
@@ -212,6 +212,8 @@ const search = ref('')
 const selectedCategory = ref('')
 const amountPaidInput = ref(0)
 
+const checkoutLoading = ref(false)
+
 const receipt = ref<{
   show: boolean
   success: boolean
@@ -308,47 +310,48 @@ function addToCart(product: Product) {
 }
 
 async function handleCheckout() {
-  const { data, error } = await cartStore.checkout()
+  if (checkoutLoading.value) return
+  checkoutLoading.value = true
+  try {
+    const { data, items, error } = await cartStore.checkout()
 
-  if (error || !data) {
-    const msg = typeof error === 'string' ? error : error?.message || 'Terjadi kesalahan saat memproses pembayaran'
-    receipt.value = { ...receipt.value, show: true, success: false, error: msg }
-    return
-  }
+    if (error || !data) {
+      const msg = typeof error === 'string' ? error : error?.message || 'Terjadi kesalahan saat memproses pembayaran'
+      receipt.value = { ...receipt.value, show: true, success: false, error: msg }
+      return
+    }
 
-  receipt.value = {
-    show: true,
-    success: true,
-    data,
-    items: cartStore.items.map((i) => ({
-      name: i.product.name,
-      qty: i.quantity,
-      price: i.product.price,
-      subtotal: i.product.price * i.quantity,
-    })),
-    cashier: data.cashier_name || '',
-    date: new Date(data.created_at).toLocaleString('id-ID', {
-      day: 'numeric', month: 'long', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    }),
-    storeAddress: 'Jl. Contoh No. 123, Kota',
-    error: '',
-  }
+    receipt.value = {
+      show: true,
+      success: true,
+      data,
+      items: items || [],
+      cashier: data.cashier_name || '',
+      date: new Date(data.created_at).toLocaleString('id-ID', {
+        day: 'numeric', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      }),
+      storeAddress: 'Jl. Contoh No. 123, Kota',
+      error: '',
+    }
 
-  amountPaidInput.value = 0
-  productStore.fetchProducts()
-  await nextTick()
-  const canvas = document.getElementById('receipt-barcode') as HTMLCanvasElement
-  if (canvas && receipt.value.data?.invoice_number) {
-    JsBarcode(canvas, receipt.value.data.invoice_number, {
-      format: 'CODE128',
-      width: 1.5,
-      height: 40,
-      displayValue: false,
-      background: '#ffffff',
-      lineColor: '#111',
-      margin: 0,
-    })
+    amountPaidInput.value = 0
+    productStore.fetchProducts()
+    await nextTick()
+    const canvas = document.getElementById('receipt-barcode') as HTMLCanvasElement
+    if (canvas && receipt.value.data?.invoice_number) {
+      JsBarcode(canvas, receipt.value.data.invoice_number, {
+        format: 'CODE128',
+        width: 1.5,
+        height: 40,
+        displayValue: false,
+        background: '#ffffff',
+        lineColor: '#111',
+        margin: 0,
+      })
+    }
+  } finally {
+    checkoutLoading.value = false
   }
 }
 </script>
