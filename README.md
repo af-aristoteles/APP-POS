@@ -115,13 +115,7 @@
 
 ## 📸 Screenshots
 
-| Login | POS | Produk |
-|---|---|---|
-| ![Login](https://via.placeholder.com/300x200/111/FFE600?text=Login) | ![POS](https://via.placeholder.com/300x200/111/FFE600?text=POS) | ![Produk](https://via.placeholder.com/300x200/111/FFE600?text=Produk) |
-
-| Laporan | Transaksi | Dashboard |
-|---|---|---|
-| ![Laporan](https://via.placeholder.com/300x200/111/FFE600?text=Laporan) | ![Transaksi](https://via.placeholder.com/300x200/111/FFE600?text=Transaksi) | ![Dashboard](https://via.placeholder.com/300x200/111/FFE600?text=Dashboard) |
+> *(Tambahkan screenshot aplikasi di sini. Contoh: halaman Login, POS, Produk, Laporan)*
 
 ---
 
