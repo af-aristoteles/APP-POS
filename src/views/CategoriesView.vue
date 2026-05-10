@@ -97,22 +97,33 @@ function closeModal() {
 }
 
 async function handleSubmit() {
+  let error: any
   if (editingCategory.value) {
-    await productStore.updateCategory(editingCategory.value.id, form.value)
+    const res = await productStore.updateCategory(editingCategory.value.id, form.value)
+    error = res.error
   } else {
-    await productStore.addCategory(form.value)
+    const res = await productStore.addCategory(form.value)
+    error = res.error
+  }
+  if (error) {
+    alert('Gagal menyimpan kategori: ' + error.message)
+    return
   }
   closeModal()
 }
 
 async function handleDelete(id: string) {
-  if (confirm('Yakin ingin menghapus kategori ini?')) {
-    await productStore.deleteCategory(id)
+  if (!confirm('Yakin ingin menghapus kategori ini?')) return
+  const error = await productStore.deleteCategory(id)
+  if (error) {
+    alert('Gagal menghapus kategori: ' + error.message)
   }
 }
 
-onMounted(() => {
-  productStore.fetchCategories()
-  productStore.fetchProducts()
+onMounted(async () => {
+  await Promise.all([
+    productStore.fetchCategories(),
+    productStore.fetchProducts(),
+  ])
 })
 </script>

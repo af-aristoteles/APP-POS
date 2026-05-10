@@ -108,11 +108,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useTransactionStore } from '@/stores/transaction'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, exportCSV, printReport } from '@/lib/utils'
-
-const transactionStore = useTransactionStore()
 const topProducts = ref<{ name: string; quantity: number; total: number }[]>([])
 const dailySales = ref<{ date: string; label: string; total: number }[]>([])
 
@@ -125,9 +122,16 @@ const stats = ref({
   totalItems: 0,
 })
 
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const d_ = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d_}`
+}
+
 const today = new Date()
-const dateStart = ref(new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0] || '')
-const dateEnd = ref(today.toISOString().split('T')[0] || '')
+const dateStart = ref(formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 1)))
+const dateEnd = ref(formatLocalDate(today))
 
 function getBarWidth(value: number): number {
   const max = Math.max(...topProducts.value.map((p) => p.total), 1)
@@ -190,7 +194,7 @@ async function loadReport() {
   const dayMap: Record<string, number> = {}
   if (dailyData) {
     dailyData.forEach((t) => {
-      const day = new Date(t.created_at).toISOString().split('T')[0] ?? ''
+      const day = formatLocalDate(new Date(t.created_at))
       dayMap[day] = (dayMap[day] || 0) + Number(t.total_amount)
     })
   }
@@ -201,7 +205,7 @@ async function loadReport() {
   dailySales.value = []
   const current = new Date(startDate)
   while (current <= endDate) {
-    const dateStr = current.toISOString().split('T')[0] || ''
+    const dateStr = formatLocalDate(current)
     dailySales.value.push({
       date: dateStr,
       label: current.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
@@ -264,7 +268,6 @@ function printReportPDF() {
 }
 
 onMounted(async () => {
-  await transactionStore.fetchTransactions()
   await loadReport()
 })
 </script>

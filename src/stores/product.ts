@@ -36,7 +36,7 @@ export const useProductStore = defineStore('product', () => {
     const { data, error } = await supabase
       .from('products')
       .insert(product)
-      .select()
+      .select('*, category:categories(*)')
       .single()
     if (!error && data) products.value.push(data as Product)
     return { data, error }
@@ -47,7 +47,7 @@ export const useProductStore = defineStore('product', () => {
       .from('products')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select('*, category:categories(*)')
       .single()
     if (!error && data) {
       const index = products.value.findIndex((p) => p.id === id)

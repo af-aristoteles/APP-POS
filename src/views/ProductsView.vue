@@ -183,22 +183,33 @@ function closeModal() {
 }
 
 async function handleSubmit() {
+  let error: any
   if (editingProduct.value) {
-    await productStore.updateProduct(editingProduct.value.id, form.value)
+    const res = await productStore.updateProduct(editingProduct.value.id, form.value)
+    error = res.error
   } else {
-    await productStore.addProduct(form.value as any)
+    const res = await productStore.addProduct(form.value as any)
+    error = res.error
+  }
+  if (error) {
+    alert('Gagal menyimpan produk: ' + error.message)
+    return
   }
   closeModal()
 }
 
 async function handleDelete(id: string) {
-  if (confirm('Yakin ingin menghapus produk ini?')) {
-    await productStore.deleteProduct(id)
+  if (!confirm('Yakin ingin menghapus produk ini?')) return
+  const error = await productStore.deleteProduct(id)
+  if (error) {
+    alert('Gagal menghapus produk: ' + error.message)
   }
 }
 
-onMounted(() => {
-  productStore.fetchProducts()
-  productStore.fetchCategories()
+onMounted(async () => {
+  await Promise.all([
+    productStore.fetchProducts(),
+    productStore.fetchCategories(),
+  ])
 })
 </script>
