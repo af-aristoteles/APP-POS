@@ -154,20 +154,20 @@
         </div>
 
         <!-- Totals -->
-        <div class="space-y-1 text-sm mb-4">
-          <div class="flex justify-between">
-            <span class="font-bold text-gray-500">Total</span>
-            <span class="font-black text-lg">{{ formatCurrency(receipt.data?.total_amount) }}</span>
+          <div class="space-y-1 text-sm mb-4">
+            <div class="flex justify-between">
+              <span class="font-bold text-gray-500">Total</span>
+              <span class="font-black text-lg">{{ formatCurrency(receipt.data?.total_amount || 0) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="font-bold text-gray-500">Bayar</span>
+              <span class="font-bold">{{ formatCurrency(receipt.data?.amount_paid || 0) }}</span>
+            </div>
+            <div class="flex justify-between border-t-2 border-[#111] pt-1">
+              <span class="font-bold text-green-700">Kembalian</span>
+              <span class="font-black text-green-700 text-base">{{ formatCurrency(receipt.data?.change_amount || 0) }}</span>
+            </div>
           </div>
-          <div class="flex justify-between">
-            <span class="font-bold text-gray-500">Bayar</span>
-            <span class="font-bold">{{ formatCurrency(receipt.data?.amount_paid) }}</span>
-          </div>
-          <div class="flex justify-between border-t-2 border-[#111] pt-1">
-            <span class="font-bold text-green-700">Kembalian</span>
-            <span class="font-black text-green-700 text-base">{{ formatCurrency(receipt.data?.change_amount) }}</span>
-          </div>
-        </div>
 
         <!-- Footer -->
         <div class="text-center border-t-3 border-[#111] pt-4">
@@ -269,9 +269,9 @@ function printReceipt() {
       <table>${itemsHtml}</table>
       <div class="divider"></div>
       <table>
-        <tr><td><b>Total</b></td><td style="text-align:right"><b>${formatCurrency(r.data?.total_amount)}</b></td></tr>
-        <tr><td>Bayar</td><td style="text-align:right">${formatCurrency(r.data?.amount_paid)}</td></tr>
-        <tr class="total"><td><b>Kembalian</b></td><td style="text-align:right"><b>${formatCurrency(r.data?.change_amount)}</b></td></tr>
+        <tr><td><b>Total</b></td><td style="text-align:right"><b>${formatCurrency(r.data?.total_amount || 0)}</b></td></tr>
+        <tr><td>Bayar</td><td style="text-align:right">${formatCurrency(r.data?.amount_paid || 0)}</td></tr>
+        <tr class="total"><td><b>Kembalian</b></td><td style="text-align:right"><b>${formatCurrency(r.data?.change_amount || 0)}</b></td></tr>
       </table>
       <div class="divider"></div>
       <div class="footer">Terima kasih telah berbelanja</div>

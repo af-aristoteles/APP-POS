@@ -119,7 +119,7 @@ export const useProductStore = defineStore('product', () => {
       .select('*')
 
     const toAlert = (lowStock || []).filter(
-      (p: LowStockProduct) => !alertedProductIds.has(p.id) && p.is_active
+      (p: LowStockProduct) => !alertedProductIds.has(p.id)
     )
 
     return { data: toAlert as LowStockProduct[], error: error || lowStockErr }

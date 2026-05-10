@@ -212,12 +212,15 @@ async function loadReport() {
 }
 
 function exportReportCSV() {
-  const topRows = topProducts.slice(0, 10).map((p) => [
+  const products = topProducts.value
+  const daily = dailySales.value
+  const s = stats.value
+  const topRows = products.slice(0, 10).map((p: any) => [
     p.name,
     String(p.quantity),
     String(p.total),
   ])
-  const dailyRows = dailySales.map((d) => [
+  const dailyRows = daily.map((d: any) => [
     d.label,
     String(d.total),
   ])
@@ -231,16 +234,19 @@ function exportReportCSV() {
 }
 
 function printReportPDF() {
-  const topRows = topProducts.slice(0, 10).map((p) =>
+  const products = topProducts.value
+  const daily = dailySales.value
+  const s = stats.value
+  const topRows = products.slice(0, 10).map((p: any) =>
     `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${formatCurrency(p.total)}</td></tr>`
   ).join('')
-  const dailyRows = dailySales.map((d) =>
+  const dailyRows = daily.map((d: any) =>
     `<tr><td>${d.label}</td><td>${formatCurrency(d.total)}</td></tr>`
   ).join('')
 
   const content = `
     <h2>Ringkasan Laporan</h2>
-    <p>Total: ${formatCurrency(stats.totalSales)} | Transaksi: ${stats.totalCount} | Item: ${stats.totalItems}</p>
+    <p>Total: ${formatCurrency(s.totalSales)} | Transaksi: ${s.totalCount} | Item: ${s.totalItems}</p>
 
     <h3>Top 10 Produk</h3>
     <table>
