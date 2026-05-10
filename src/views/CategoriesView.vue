@@ -22,7 +22,7 @@
                 <p class="text-xs text-gray-500 mt-1 font-medium">{{ cat.description || 'Tidak ada deskripsi' }}</p>
               </div>
               <span class="nb-badge nb-badge-blue shrink-0 ml-2 text-[10px]">
-                {{ getProductCount(cat.id) }}
+                {{ productCountByCategory[cat.id] || 0 }}
               </span>
             </div>
             <div class="flex gap-2 mt-3 pt-3 border-t-2 border-[#111]">
@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useProductStore } from '@/stores/product'
 import type { Category } from '@/types'
 
@@ -76,9 +76,13 @@ const showModal = ref(false)
 const editingCategory = ref<Category | null>(null)
 const form = ref({ name: '', description: '' })
 
-function getProductCount(catId: string) {
-  return productStore.products.filter((p) => p.category_id === catId).length
-}
+const productCountByCategory = computed(() => {
+  const map: Record<string, number> = {}
+  for (const p of productStore.products) {
+    if (p.category_id) map[p.category_id] = (map[p.category_id] || 0) + 1
+  }
+  return map
+})
 
 function openModal(cat?: Category) {
   if (cat) {

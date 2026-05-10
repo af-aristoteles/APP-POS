@@ -36,11 +36,17 @@
           </button>
         </div>
 
-        <div v-if="filteredProducts.length === 0" class="flex flex-col items-center justify-center py-16">
+        <div v-if="filteredProducts.length === 0 && !loadingProducts" class="flex flex-col items-center justify-center py-16">
           <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <p class="font-bold text-gray-400">Produk tidak ditemukan</p>
+        </div>
+        <div v-if="loadingProducts" class="flex flex-col items-center justify-center py-16">
+          <svg class="w-10 h-10 text-gray-300 mb-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <p class="font-bold text-gray-400">Memuat produk...</p>
         </div>
       </div>
     </div>
@@ -209,8 +215,10 @@ import JsBarcode from 'jsbarcode'
 const productStore = useProductStore()
 const cartStore = useCartStore()
 const search = ref('')
+const debouncedSearch = ref('')
 const selectedCategory = ref('')
 const amountPaidInput = ref(0)
+const loadingProducts = ref(true)
 
 const checkoutLoading = ref(false)
 
@@ -283,19 +291,29 @@ function printReceipt() {
   printWin.print()
 }
 
-onMounted(() => {
-  productStore.fetchProducts()
-  productStore.fetchCategories()
+onMounted(async () => {
+  await Promise.all([
+    productStore.fetchProducts(),
+    productStore.fetchCategories(),
+  ])
+  loadingProducts.value = false
 })
 
 watch(amountPaidInput, (val) => {
   cartStore.amountPaid = val || 0
 })
 
+// Debounce search input — avoid filtering on every keystroke
+let debounceTimer: ReturnType<typeof setTimeout>
+watch(search, (val) => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => { debouncedSearch.value = val }, 300)
+})
+
 const filteredProducts = computed(() => {
   let products = productStore.products.filter((p) => p.is_active)
-  if (search.value) {
-    const q = search.value.toLowerCase()
+  const q = debouncedSearch.value.toLowerCase()
+  if (q) {
     products = products.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
   }
   if (selectedCategory.value) {
@@ -336,7 +354,7 @@ async function handleCheckout() {
     }
 
     amountPaidInput.value = 0
-    productStore.fetchProducts()
+    await productStore.fetchProducts()
     await nextTick()
     const canvas = document.getElementById('receipt-barcode') as HTMLCanvasElement
     if (canvas && receipt.value.data?.invoice_number) {

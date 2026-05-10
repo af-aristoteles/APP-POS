@@ -176,17 +176,18 @@ async function handleUpdateRole() {
   }
 }
 
-function handleDelete(user: UserProfile) {
+async function handleDelete(user: UserProfile) {
   if (user.id === authStore.profile?.id) return
-  if (confirm(`Yakin ingin menghapus user "${user.name}"?`)) {
-    authStore.deleteUser(user.id)
-    loadUsers()
-  }
+  if (!confirm(`Yakin ingin menghapus user "${user.name}"?`)) return
+  await authStore.deleteUser(user.id)
+  await loadUsers()
 }
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-onMounted(loadUsers)
+onMounted(async () => {
+  await loadUsers()
+})
 </script>

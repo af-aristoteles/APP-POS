@@ -127,6 +127,7 @@ import { formatCurrency, formatDate, exportCSV } from '@/lib/utils'
 const transactionStore = useTransactionStore()
 const search = ref('')
 const selectedTx = ref<Transaction | null>(null)
+const loadingTx = ref(false)
 
 const filteredTransactions = computed(() => {
   if (!search.value) return transactionStore.transactions
@@ -137,8 +138,10 @@ const filteredTransactions = computed(() => {
 })
 
 async function viewDetails(tx: Transaction) {
-  selectedTx.value = tx
+  loadingTx.value = true
   await transactionStore.fetchTransactionItems(tx.id)
+  selectedTx.value = tx
+  loadingTx.value = false
 }
 
 function exportCSVFile() {
@@ -157,7 +160,7 @@ function exportCSVFile() {
   ], rows)
 }
 
-onMounted(() => {
-  transactionStore.fetchTransactions()
+onMounted(async () => {
+  await transactionStore.fetchTransactions()
 })
 </script>
